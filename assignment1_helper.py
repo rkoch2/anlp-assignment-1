@@ -5,13 +5,19 @@ from random import random
 from math import log
 from collections import defaultdict
 
-#HELLO
 tri_counts=defaultdict(int) #counts of all trigrams in input
-
 
 #this function currently does nothing.
 def preprocess_line(line):
-    return line
+    line = line.lower()
+    result = ""
+    regex = "[a-z0-9. ]"
+    for char in line:
+        if re.findall(regex, char) != "":
+            result += char
+    return result
+
+print(preprocess_line("Resumption of the session"))
 
 
 #here we make sure the user provides a training filename when
