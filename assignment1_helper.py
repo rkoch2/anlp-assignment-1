@@ -13,12 +13,11 @@ def preprocess_line(line):
     result = ""
     regex = "[a-z0-9. ]"
     for char in line:
-        if re.findall(regex, char) != "":
+        if re.findall(regex, char) != []:
+            if re.findall("[1-9]", char):
+                char = "0"
             result += char
     return result
-
-print(preprocess_line("Resumption of the session"))
-
 
 #here we make sure the user provides a training filename when
 #calling this program, otherwise exit with a usage error.
