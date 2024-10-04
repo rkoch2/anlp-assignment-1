@@ -5,7 +5,7 @@ from random import random
 from math import log
 from collections import defaultdict
 
-
+#HELLO
 tri_counts=defaultdict(int) #counts of all trigrams in input
 
 
