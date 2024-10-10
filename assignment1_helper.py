@@ -7,7 +7,7 @@ from collections import defaultdict
 
 tri_counts=defaultdict(int) #counts of all trigrams in input
 
-#this function currently does nothing.
+# Preprocessing function
 def preprocess_line(line):
     line = line.lower()
     result = "##"
@@ -17,7 +17,7 @@ def preprocess_line(line):
             if re.findall("[1-9]", char):
                 char = "0"
             result += char
-        result += "#"
+    result += "#"
     return result
 
 #here we make sure the user provides a training filename when
@@ -48,19 +48,6 @@ with open(infile) as f:
             trigram = line[j:j+3]
             tri_counts[trigram] += 1
 
-#Some example code that prints out the counts. For small input files
-#the counts are easy to look at but for larger files you can redirect
-#to an output file (see Lab 1).
-# print("Trigram counts in ", infile, ", sorted alphabetically:")
-# for trigram in sorted(tri_counts.keys()):
-#     print(trigram, ": ", tri_counts[trigram])
-# print("Trigram counts in ", infile, ", sorted numerically:")
-# for tri_count in sorted(tri_counts.items(), key=lambda x:x[1], reverse = True):
-#     print(tri_count[0], ": ", str(tri_count[1]))
-# for trigram in tri_counts.keys():
-#     if trigram[:2] == "ng":
-#         print(trigram, ":", tri_counts[trigram])
-
 count = 0
 sums = []
 
@@ -69,25 +56,39 @@ for i in range(0, len(sorted_trigrams)):
     count += tri_counts[sorted_trigrams[i]]
     if (i+1) % 30 == 0:
         sums.append(count)
-        # for j in range(i-29, i+1):
-        #     tri_counts[sorted_trigrams[j]] /= count
         count = 0
 
 for i in range(0, len(sums)):
     for j in range(i*30, i*30 + 30):
-        # print(tri_counts[sorted_trigrams[j]], sums[i])
         tri_counts[sorted_trigrams[j]] /= sums[i]
-        # print(tri_counts[sorted_trigrams[j]])
 
 
-total = sum(tri_counts.values())
-print(total)
+#Some example code that prints out the counts. For small input files
+#the counts are easy to look at but for larger files you can redirect
+#to an output file (see Lab 1).
+print("Trigram counts in ", infile, ", sorted alphabetically:")
+for trigram in sorted(tri_counts.keys()):
+    print(trigram, ": ", tri_counts[trigram])
+print("Trigram counts in ", infile, ", sorted numerically:")
+for tri_count in sorted(tri_counts.items(), key=lambda x:x[1], reverse = True):
+    print(tri_count[0], ": ", str(tri_count[1]))
+c = 0
+for trigram in tri_counts.keys():
+    if trigram[:2] == "ng":
+        print(trigram, ":", tri_counts[trigram])
+        c += tri_counts[trigram]
+print(c)
 
-t = 0
-for i in range(0, 30):
-    t += tri_counts[sorted_trigrams[i]]
-    print(sorted_trigrams[i], tri_counts[sorted_trigrams[i]])
 
-print(t)
+# --- checking contents of tri_counts ---
+# total = sum(tri_counts.values())
+# print(total)
+
+# t = 0
+# for i in range(0, 30):
+#     t += tri_counts[sorted_trigrams[i]]
+#     print(sorted_trigrams[i], tri_counts[sorted_trigrams[i]])
+
+# print(t)
 
     
