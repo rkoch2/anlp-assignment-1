@@ -43,8 +43,8 @@ with open(model_file) as f:
 #your program, you may need to modify this code.
 with open(infile) as f:
     for line in f:
-        line = preprocess_line(line) #doesn't do anything yet.
-        for j in range(len(line)-(3)):
+        line = preprocess_line(line)
+        for j in range(len(line)-2):
             trigram = line[j:j+3]
             tri_counts[trigram] += 1
 
@@ -66,18 +66,23 @@ for i in range(0, len(sums)):
 #Some example code that prints out the counts. For small input files
 #the counts are easy to look at but for larger files you can redirect
 #to an output file (see Lab 1).
-print("Trigram counts in ", infile, ", sorted alphabetically:")
-for trigram in sorted(tri_counts.keys()):
-    print(trigram, ": ", tri_counts[trigram])
-print("Trigram counts in ", infile, ", sorted numerically:")
-for tri_count in sorted(tri_counts.items(), key=lambda x:x[1], reverse = True):
-    print(tri_count[0], ": ", str(tri_count[1]))
-c = 0
-for trigram in tri_counts.keys():
-    if trigram[:2] == "ng":
-        print(trigram, ":", tri_counts[trigram])
-        c += tri_counts[trigram]
-print(c)
+# print("Trigram counts in ", infile, ", sorted alphabetically:")
+# for trigram in sorted(tri_counts.keys()):
+#     print(trigram, ": ", tri_counts[trigram])
+# print("Trigram counts in ", infile, ", sorted numerically:")
+# for tri_count in sorted(tri_counts.items(), key=lambda x:x[1], reverse = True):
+#     print(tri_count[0], ": ", str(tri_count[1]))
+# c = 0
+# for trigram in tri_counts.keys():
+#     if trigram[:2] == "ng":
+#         print(trigram, ":", tri_counts[trigram])
+#         c += tri_counts[trigram]
+# print(c)
+# for trigram in tri_counts.keys():
+#     if trigram[:2] == "##":
+#         print(trigram, ":", tri_counts[trigram])
+
+
 
 
 # --- checking contents of tri_counts ---
@@ -91,4 +96,49 @@ print(c)
 
 # print(t)
 
+def generate_file(tri_probs):
+    f = open("data/model-1.en", "w")
+    for item in tri_probs:
+        f.write(item + "\t" + str(tri_probs[item]) + "\n")
+    f.close()
+
+generate_file(tri_counts)
+
+def generate_dict(model_file):
+    result_dict = defaultdict(int)
+    with open(model_file) as f:
+        for line in f:
+            result_dict[line.split("\t")[0]] = float(line.split("\t")[1][:-1])
+    return result_dict
+
+new_dict = generate_dict("data/model-br.en")
+
+def generate_from_LM(tri_probs):
+    result = "##"
+    iterations = 300
+    for j in range(0, iterations):
+        two_prev = result[-2:]
+        if two_prev == ".#":
+            iterations -= j
+            result += "\n##"
+            continue
+        trigrams = []
+        for tri in tri_probs:
+            if tri[:2] == two_prev:
+                trigrams.append(tri)
+        random_num = random()
+        print(two_prev)
+        print(trigrams)
+        i = 0
+        next_prob = tri_probs[trigrams[i]]
+        while random_num > next_prob:
+            print(random_num, next_prob)
+            random_num -= next_prob
+            i += 1
+            next_prob = tri_probs[trigrams[i]]
+        result += trigrams[i][2]
+    print(result)
+
+generate_from_LM(new_dict)
+    
     
