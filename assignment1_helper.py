@@ -113,14 +113,18 @@ def generate_dict(model_file):
 
 new_dict = generate_dict("data/model-br.en")
 
+# don't count starting #s as part of the character count, but count the ending # (1 char)
+# (and don't display any #s when you print the generated sentences)
 def generate_from_LM(tri_probs):
     result = "##"
+    output = ""
     iterations = 300
     for j in range(0, iterations):
         two_prev = result[-2:]
         if two_prev == ".#":
             iterations -= j
             result += "\n##"
+            output += "\n"
             continue
         trigrams = []
         for tri in tri_probs:
@@ -137,7 +141,9 @@ def generate_from_LM(tri_probs):
             i += 1
             next_prob = tri_probs[trigrams[i]]
         result += trigrams[i][2]
-    print(result)
+        if trigrams[i][2] != "#":
+            output += trigrams[i][2]
+    print(output)
 
 generate_from_LM(new_dict)
     
