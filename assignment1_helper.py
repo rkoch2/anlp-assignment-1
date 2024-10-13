@@ -1,13 +1,18 @@
-#Here are some libraries you're likely to use. You might want/need others as well.
 import re
 import sys
 from random import random
 from math import log
 from collections import defaultdict
 
-tri_counts=defaultdict(int) #counts of all trigrams in input
+tri_counts=defaultdict(int) # counts of all trigrams in input
+
+# Hyperparameter
+alpha = 0.001
 
 # Preprocessing function
+# given a string, returns a lowercase version of the string with all digits converted to 0,
+# all other characters except [a-z. ] removed, while prepending "##" and appending "#"
+# eg. "Hi, I'm a sample input!" --> "##hi im a sample input#"
 def preprocess_line(line):
     line = line.lower()
     result = "##"
@@ -29,8 +34,6 @@ if len(sys.argv) != 2:
 infile = sys.argv[1] #get input argument: the training file
 model_file = "data/model-br.en"
 
-alpha = 0.001
-
 with open(model_file) as f:
     for line in f:
         token = line.split("\t")[0]
@@ -49,19 +52,17 @@ with open(infile) as f:
             trigram = line[j:j+3]
             tri_counts[trigram] += 1
 
-count = 0
-sums = []
-
+sums = {}
 sorted_trigrams = sorted(tri_counts.keys())
-for i in range(0, len(sorted_trigrams)):
-    count += tri_counts[sorted_trigrams[i]]
-    if (i+1) % 30 == 0:
-        sums.append(count)
-        count = 0
 
-for i in range(0, len(sums)):
-    for j in range(i*30, i*30 + 30):
-        tri_counts[sorted_trigrams[j]] /= sums[i]
+for trigram in sorted_trigrams:
+    first_two_chars = trigram[:2]
+    if sums.get(first_two_chars) == None:
+        sums[first_two_chars] = 0
+    sums[first_two_chars] += tri_counts[trigram]
+
+for trigram in sorted_trigrams:
+    tri_counts[trigram] /= sums.get(trigram[:2])
 
 #Some example code that prints out the counts. For small input files
 #the counts are easy to look at but for larger files you can redirect
@@ -78,23 +79,6 @@ for i in range(0, len(sums)):
 #         print(trigram, ":", tri_counts[trigram])
 #         c += tri_counts[trigram]
 # print(c)
-# for trigram in tri_counts.keys():
-#     if trigram[:2] == "##":
-#         print(trigram, ":", tri_counts[trigram])
-
-
-
-
-# --- checking contents of tri_counts ---
-# total = sum(tri_counts.values())
-# print(total)
-
-# t = 0
-# for i in range(0, 30):
-#     t += tri_counts[sorted_trigrams[i]]
-#     print(sorted_trigrams[i], tri_counts[sorted_trigrams[i]])
-
-# print(t)
 
 def generate_file(tri_probs):
     f = open("data/model-1.en", "w")
@@ -112,9 +96,9 @@ def generate_dict(model_file):
     return result_dict
 
 #new_dict = generate_dict("data/model-br.en")
-#en_dict = generate_dict("data/model-1.en")
+en_dict = generate_dict("data/model-1.en")
 #es_dict = generate_dict("data/model-1.es")
-de_dict = generate_dict("data/model-1.de")
+#de_dict = generate_dict("data/model-1.de")
 
 # don't count starting #s as part of the character count, but count the ending # (1 char)
 # (and don't display any #s when you print the generated sentences)
@@ -124,7 +108,7 @@ def generate_from_LM(tri_probs):
     iterations = 300
     for j in range(0, iterations):
         two_prev = result[-2:]
-        if two_prev == ".#":
+        if two_prev != "##" and two_prev[1] == "#":
             iterations -= j
             result += "\n##"
             output += "\n"
@@ -134,12 +118,12 @@ def generate_from_LM(tri_probs):
             if tri[:2] == two_prev:
                 trigrams.append(tri)
         random_num = random()
-        print(two_prev)
-        print(trigrams)
+        # print(two_prev)
+        # print(trigrams)
         i = 0
         next_prob = tri_probs[trigrams[i]]
         while random_num > next_prob:
-            print(random_num, next_prob)
+            # print(random_num, next_prob)
             random_num -= next_prob
             i += 1
             next_prob = tri_probs[trigrams[i]]
@@ -149,7 +133,27 @@ def generate_from_LM(tri_probs):
     print(output)
 
 #generate_from_LM(new_dict)
-#generate_from_LM(en_dict)
+generate_from_LM(en_dict)
 #generate_from_LM(es_dict)
-generate_from_LM(de_dict)
+#generate_from_LM(de_dict)
+
+def calculate_perplexity(testing_file, prob_dict):
+    prob_values = []
+    with open(testing_file) as f:
+        for line in f:
+            line = preprocess_line(line)
+            for j in range(len(line)-2):
+                trigram = line[j:j+3]
+                if prob_dict[trigram]:
+                    prob_values.append(prob_dict[trigram])
+                else:
+                    print("probability not found for trigram ", trigram)
+    perplexity = 1
+    for prob in prob_values:
+        perplexity *= (prob ** (-1 / len(prob_values)))
+    return perplexity
+
+print("Perplexity: ", calculate_perplexity("data/test", en_dict))
+                
+
 
