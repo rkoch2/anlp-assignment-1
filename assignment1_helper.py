@@ -9,11 +9,12 @@ tri_counts=defaultdict(int) # counts of all trigrams in input
 # Hyperparameter
 alpha = 0.001
 
-# Preprocessing function
-# given a string, returns a lowercase version of the string with all digits converted to 0,
-# all other characters except [a-z. ] removed, while prepending "##" and appending "#"
-# eg. "Hi, I'm a sample input!" --> "##hi im a sample input#"
 def preprocess_line(line):
+    ''' preprocess_line takes in a string and returns a modified version of the string,
+    where all digits are converted to 0, all characters except [a-z. ] are removed, and
+    "##" is prepending to the beginning of the string while "#" is appended to the end
+    of it. eg. "Hi, I'm a sample input!" --> "##hi im a sample input#"
+    '''
     line = line.lower()
     result = "##"
     regex = "[a-z0-9. ]"
@@ -80,35 +81,47 @@ for trigram in sorted_trigrams:
 #         c += tri_counts[trigram]
 # print(c)
 
-def generate_file(tri_probs):
-    f = open("data/model-1.en", "w")
+def generate_file(tri_probs, filename):
+    ''' generate_file takes in a defaultdict of trigrams mapped to their probability
+    values and a filename (as a string), and writes the trigrams and their probabilities
+    to that file, with each line containing a trigram and probability value separated
+    by a [tab].
+    '''
+    f = open(filename, "w")
     for item in tri_probs:
         f.write(item + "\t" + str(tri_probs[item]) + "\n")
     f.close()
 
-generate_file(tri_counts)
-
 def generate_dict(model_file):
+    ''' generate_dict takes in a filename for a model file (where each line is a trigram
+    and probability value separated by a [tab]) and returns a defaultdict for that model
+    file, where trigrams are mapped to their probability values.
+    '''
     result_dict = defaultdict(int)
     with open(model_file) as f:
         for line in f:
             result_dict[line.split("\t")[0]] = float(line.split("\t")[1][:-1])
     return result_dict
 
-#new_dict = generate_dict("data/model-br.en")
+generate_file(tri_counts, "data/model-1.en")
+
+model_br_dict = generate_dict("data/model-br.en")
 en_dict = generate_dict("data/model-1.en")
-#es_dict = generate_dict("data/model-1.es")
-#de_dict = generate_dict("data/model-1.de")
+es_dict = generate_dict("data/model-1.es")
+de_dict = generate_dict("data/model-1.de")
 
 # don't count starting #s as part of the character count, but count the ending # (1 char)
-# (and don't display any #s when you print the generated sentences)
-def generate_from_LM(tri_probs):
+def generate_from_LM(tri_probs, iterations):
+    ''' generate_from_LM takes in tri_probs, a defaultdict of trigrams mapped to 
+    their probabilities, and iterations, the number of characters that should be
+    generated. Based on the probabilities in tri_probs, generate_from_LM returns
+    a string of generated text.
+    '''
     result = "##"
     output = ""
-    iterations = 300
     for j in range(0, iterations):
         two_prev = result[-2:]
-        if two_prev != "##" and two_prev[1] == "#":
+        if two_prev != "##" and two_prev[1] == "#": # detects end of line
             iterations -= j
             result += "\n##"
             output += "\n"
@@ -123,21 +136,30 @@ def generate_from_LM(tri_probs):
         i = 0
         next_prob = tri_probs[trigrams[i]]
         while random_num > next_prob:
-            # print(random_num, next_prob)
             random_num -= next_prob
             i += 1
             next_prob = tri_probs[trigrams[i]]
         result += trigrams[i][2]
         if trigrams[i][2] != "#":
             output += trigrams[i][2]
-    print(output)
+    return output
 
-#generate_from_LM(new_dict)
-generate_from_LM(en_dict)
-#generate_from_LM(es_dict)
-#generate_from_LM(de_dict)
+print("-------------------- generated from model_br_dict --------------------")
+print(generate_from_LM(model_br_dict, 300))
+print("-------------------- generated from en_dict --------------------")
+print(generate_from_LM(en_dict, 300))
+print("-------------------- generated from es_dict --------------------")
+print(generate_from_LM(es_dict, 300))
+print("-------------------- generated from de_dict --------------------")
+print(generate_from_LM(de_dict, 300))
+
 
 def calculate_perplexity(testing_file, prob_dict):
+    ''' calculate_perplexity takes in testing_file, a filename for a testing file,
+    and prob_dict, a defaultdict of trigrams mapped to their probabilities. Using
+    these probability values, calculate_perplexity returns a float representing
+    the perplexity of the model represented by the prob_dict given the testing_file
+    '''
     prob_values = []
     with open(testing_file) as f:
         for line in f:
@@ -153,7 +175,10 @@ def calculate_perplexity(testing_file, prob_dict):
         perplexity *= (prob ** (-1 / len(prob_values)))
     return perplexity
 
-print("Perplexity: ", calculate_perplexity("data/test", en_dict))
+print("\n-------------------- calculating perplexity --------------------")
+testing_file = "data/test"
+print("Perplexity using model_br_dict: ", calculate_perplexity(testing_file, model_br_dict))
+print("Perplexity using en_dict: ", calculate_perplexity(testing_file, en_dict))
+print("Perplexity using es_dict: ", calculate_perplexity(testing_file, es_dict))
+print("Perplexity using de_dict: ", calculate_perplexity(testing_file, de_dict))
                 
-
-
