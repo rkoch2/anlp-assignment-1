@@ -41,6 +41,7 @@ with open(model_file) as f:
 #please ensure you understand what it is actually doing, especially at the
 #beginning and end of each line. Depending on how you write the rest of
 #your program, you may need to modify this code.
+
 with open(infile) as f:
     for line in f:
         line = preprocess_line(line)
@@ -61,7 +62,6 @@ for i in range(0, len(sorted_trigrams)):
 for i in range(0, len(sums)):
     for j in range(i*30, i*30 + 30):
         tri_counts[sorted_trigrams[j]] /= sums[i]
-
 
 #Some example code that prints out the counts. For small input files
 #the counts are easy to look at but for larger files you can redirect
@@ -111,7 +111,10 @@ def generate_dict(model_file):
             result_dict[line.split("\t")[0]] = float(line.split("\t")[1][:-1])
     return result_dict
 
-new_dict = generate_dict("data/model-br.en")
+#new_dict = generate_dict("data/model-br.en")
+#en_dict = generate_dict("data/model-1.en")
+#es_dict = generate_dict("data/model-1.es")
+de_dict = generate_dict("data/model-1.de")
 
 # don't count starting #s as part of the character count, but count the ending # (1 char)
 # (and don't display any #s when you print the generated sentences)
@@ -145,6 +148,8 @@ def generate_from_LM(tri_probs):
             output += trigrams[i][2]
     print(output)
 
-generate_from_LM(new_dict)
-    
-    
+#generate_from_LM(new_dict)
+#generate_from_LM(en_dict)
+#generate_from_LM(es_dict)
+generate_from_LM(de_dict)
+
