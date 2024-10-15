@@ -8,6 +8,7 @@ tri_counts=defaultdict(int) # counts of all trigrams in input
 
 # Hyperparameter
 alpha = 0.001
+alpha2 = 0.08
 
 def preprocess_line(line):
     ''' preprocess_line takes in a string and returns a modified version of the string,
@@ -144,14 +145,16 @@ def generate_from_LM(tri_probs, iterations):
             output += trigrams[i][2]
     return output
 
-print("-------------------- generated from model_br_dict --------------------")
+phrase = " generated from model_br_dict "
+print(f"{phrase:-^64}")
 print(generate_from_LM(model_br_dict, 300))
-print("-------------------- generated from en_dict --------------------")
+phrase = " generated from en_dict "
+print(f"\n{phrase:-^64}")
 print(generate_from_LM(en_dict, 300))
-print("-------------------- generated from es_dict --------------------")
-print(generate_from_LM(es_dict, 300))
-print("-------------------- generated from de_dict --------------------")
-print(generate_from_LM(de_dict, 300))
+#print("-------------------- generated from es_dict --------------------")
+#print(generate_from_LM(es_dict, 300))
+#print("-------------------- generated from de_dict --------------------")
+#print(generate_from_LM(de_dict, 300))
 
 
 def calculate_perplexity(testing_file, prob_dict):
@@ -175,10 +178,54 @@ def calculate_perplexity(testing_file, prob_dict):
         perplexity *= (prob ** (-1 / len(prob_values)))
     return perplexity
 
-print("\n-------------------- calculating perplexity --------------------")
+phrase = " calculating perplexity "
+print(f"\n{phrase:-^64}")
 testing_file = "data/test"
 print("Perplexity using model_br_dict: ", calculate_perplexity(testing_file, model_br_dict))
 print("Perplexity using en_dict: ", calculate_perplexity(testing_file, en_dict))
 print("Perplexity using es_dict: ", calculate_perplexity(testing_file, es_dict))
 print("Perplexity using de_dict: ", calculate_perplexity(testing_file, de_dict))
-                
+
+
+tri_counts=defaultdict(int)
+
+model_file = "data/model-br.en"
+
+with open(model_file) as f:
+    for line in f:
+        token = line.split("\t")[0]
+        tri_counts[token] += alpha2
+
+infile = "data/training2.en"
+with open(infile) as f:
+    for line in f:
+        line = preprocess_line(line)
+        for j in range(len(line)-2):
+            trigram = line[j:j+3]
+            tri_counts[trigram] += 1
+
+sums = {}
+sorted_trigrams = sorted(tri_counts.keys())
+
+for trigram in sorted_trigrams:
+    first_two_chars = trigram[:2]
+    if sums.get(first_two_chars) == None:
+        sums[first_two_chars] = 0
+    sums[first_two_chars] += tri_counts[trigram]
+
+for trigram in sorted_trigrams:
+    tri_counts[trigram] /= sums.get(trigram[:2])
+
+generate_file(tri_counts, "data/model-2.en")
+
+en_dict2 = generate_dict("data/model-2.en")
+
+testing_file = "data/devset.en"
+phrase = " calculating perplexity of devset "
+print(f"\n{phrase:-^64}")
+print("Perplexity of devset using en_dict2: ", calculate_perplexity(testing_file, en_dict2))
+
+testing_file = "data/test"
+phrase = " calculating perplexity of test with adjusted alpha "
+print(f"\n{phrase:-^64}")
+print("Perplexity of test set using en_dict2: ", calculate_perplexity(testing_file, en_dict2))
