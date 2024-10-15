@@ -6,8 +6,10 @@ from collections import defaultdict
 
 tri_counts=defaultdict(int) # counts of all trigrams in input
 
-# Hyperparameter
-alpha = 0.001
+# Hyperparameters
+# we experimented with different alpha values (starting with 0.001), but found that 0.08
+# resulted in the lowest perplexity on the dev set
+alpha = 0.08
 alpha2 = 0.08
 
 def preprocess_line(line):
@@ -42,10 +44,11 @@ if len(sys.argv) != 2:
 infile = sys.argv[1] #get input argument: the training file
 model_file = "data/model-br.en"
 
+# Pre-filling tri_counts dict with alpha value
 with open(model_file) as f:
     for line in f:
         token = line.split("\t")[0]
-        tri_counts[token] += alpha
+        tri_counts[token] += alpha # add-alpha smoothing
 
 #This bit of code gives an example of how you might extract trigram counts
 #from a file, line by line. If you plan to use or modify this code,
@@ -53,6 +56,7 @@ with open(model_file) as f:
 #beginning and end of each line. Depending on how you write the rest of
 #your program, you may need to modify this code.
 
+# Extracting trigram counts
 with open(infile) as f:
     for line in f:
         line = preprocess_line(line)
@@ -60,15 +64,17 @@ with open(infile) as f:
             trigram = line[j:j+3]
             tri_counts[trigram] += 1
 
-sums = {}
+sums = {} # dictionary of frist two trigram characters mapped to the sum of their occurences
 sorted_trigrams = sorted(tri_counts.keys())
 
+# accumulating sums in the sums dictionary
 for trigram in sorted_trigrams:
     first_two_chars = trigram[:2]
     if sums.get(first_two_chars) == None:
         sums[first_two_chars] = 0
     sums[first_two_chars] += tri_counts[trigram]
 
+# dividing trigram counts by the sum for their first two chars to convert to probabilities
 for trigram in sorted_trigrams:
     tri_counts[trigram] /= sums.get(trigram[:2])
 
@@ -146,7 +152,7 @@ def generate_from_LM(tri_probs, iterations):
         while random_num > next_prob:
             # subtract the probability values from random_num until the next probability
             # value is greater than random_num. The trigram associated with the next probability
-            # value is the "selected" trigram (from which the thrid char will be appended to result)
+            # value is the "selected" trigram (from which the third char will be appended to result)
             random_num -= next_prob
             i += 1
             next_prob = tri_probs[trigrams[i]]
@@ -197,9 +203,10 @@ print("Perplexity using es_dict: ", calculate_perplexity(testing_file, es_dict))
 print("Perplexity using de_dict: ", calculate_perplexity(testing_file, de_dict))
 
 
+''' the below code was used for experimenting with different alpha values after 
+splitting the training data into a training set (90%) and a dev set (10%)
+'''
 tri_counts=defaultdict(int)
-
-model_file = "data/model-br.en"
 
 with open(model_file) as f:
     for line in f:
@@ -230,7 +237,7 @@ generate_file(tri_counts, "data/model-2.en")
 
 en_dict2 = generate_dict("data/model-2.en")
 
-testing_file = "data/devset.en"
+testing_file = "data/devset"
 phrase = " calculating perplexity of devset "
 print(f"\n{phrase:-^64}")
 print("Perplexity of devset using en_dict2: ", calculate_perplexity(testing_file, en_dict2))
