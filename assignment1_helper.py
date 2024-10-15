@@ -15,6 +15,12 @@ def preprocess_line(line):
     where all digits are converted to 0, all characters except [a-z. ] are removed, and
     "##" is prepending to the beginning of the string while "#" is appended to the end
     of it. eg. "Hi, I'm a sample input!" --> "##hi im a sample input#"
+
+    In addition to what was specified in the handout, we added the ## and # at the beginning
+    and end of the resulting string, respectively. Since this prepending/appending of the
+    #s was an additional modification process for each of the lines, it made the most sense
+    to us to keep all of these modifications contained within one function (for organization)
+    and not add the #s in other functions.
     '''
     line = line.lower()
     result = "##"
@@ -101,6 +107,8 @@ def generate_dict(model_file):
     result_dict = defaultdict(int)
     with open(model_file) as f:
         for line in f:
+            # for each line in the model file, get the trigram and probability
+            # (split by \t) and add to the result_dict
             result_dict[line.split("\t")[0]] = float(line.split("\t")[1][:-1])
     return result_dict
 
@@ -111,13 +119,14 @@ en_dict = generate_dict("data/model-1.en")
 es_dict = generate_dict("data/model-1.es")
 de_dict = generate_dict("data/model-1.de")
 
-# don't count starting #s as part of the character count, but count the ending # (1 char)
 def generate_from_LM(tri_probs, iterations):
     ''' generate_from_LM takes in tri_probs, a defaultdict of trigrams mapped to 
     their probabilities, and iterations, the number of characters that should be
     generated. Based on the probabilities in tri_probs, generate_from_LM returns
     a string of generated text.
     '''
+    # result and output are the same except that result has starting/ending #s, while
+    # output is a "clean" version (without the #s) that can be displayed
     result = "##"
     output = ""
     for j in range(0, iterations):
@@ -126,22 +135,23 @@ def generate_from_LM(tri_probs, iterations):
             iterations -= j
             result += "\n##"
             output += "\n"
-            continue
-        trigrams = []
+            continue # begin a new line
+        trigrams = [] # a list of trigrams that start with the two previous chars
         for tri in tri_probs:
             if tri[:2] == two_prev:
                 trigrams.append(tri)
-        random_num = random()
-        # print(two_prev)
-        # print(trigrams)
+        random_num = random() # a random number between 0 and 1
         i = 0
         next_prob = tri_probs[trigrams[i]]
         while random_num > next_prob:
+            # subtract the probability values from random_num until the next probability
+            # value is greater than random_num. The trigram associated with the next probability
+            # value is the "selected" trigram (from which the thrid char will be appended to result)
             random_num -= next_prob
             i += 1
             next_prob = tri_probs[trigrams[i]]
-        result += trigrams[i][2]
-        if trigrams[i][2] != "#":
+        result += trigrams[i][2] # append the third character of the selected trigram to result
+        if trigrams[i][2] != "#": # append the third character to output if it is not a #
             output += trigrams[i][2]
     return output
 
@@ -163,9 +173,9 @@ def calculate_perplexity(testing_file, prob_dict):
     these probability values, calculate_perplexity returns a float representing
     the perplexity of the model represented by the prob_dict given the testing_file
     '''
-    prob_values = []
+    prob_values = [] # a list of probability values for each trigram in the testing file
     with open(testing_file) as f:
-        for line in f:
+        for line in f: # filling the prob_values list with probabilities
             line = preprocess_line(line)
             for j in range(len(line)-2):
                 trigram = line[j:j+3]
